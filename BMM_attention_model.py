@@ -4,7 +4,10 @@ from keras.models import Model
 from keras.optimizers import SGD
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
 
-assert K.backend() == 'theano'
+# assert K.backend() == 'theano'
+assert K.backend() == 'tensorflow'
+# assert K.image_dim_ordering() == 'th'
+K.set_image_data_format('channels_first')
 assert K.image_dim_ordering() == 'th'
 
 def crosschannelnormalization(alpha = 1e-4, k=2, beta=0.75, n=5,**kwargs):
@@ -17,7 +20,7 @@ def crosschannelnormalization(alpha = 1e-4, k=2, beta=0.75, n=5,**kwargs):
         half = n // 2
         square = K.square(X)
         extra_channels = K.spatial_2d_padding(K.permute_dimensions(square, (0,2,3,1))
-                                              , (0,half))
+                                              , ((0, 0),(half, half)))
         extra_channels = K.permute_dimensions(extra_channels, (0,3,1,2))
         scale = k
         for i in range(n):
@@ -83,13 +86,14 @@ def minst_attention(inc_noise=False, attention=True):
         input_pad = ZeroPadding2D((1,1),input_shape=(1,image_size,image_size),name='input_pad')(inputs)
 
     conv_1 = conv_1a(input_pad)
+    # print(conv_1)
     conv_1 = maxp_1a(conv_1)
-    conv_1 = norm_1a(conv_1)
+    # conv_1 = norm_1a(conv_1)
     conv_1 = zero_1a(conv_1)
 
     conv_2_x = conv_2a(conv_1)
     conv_2 = maxp_2a(conv_2_x)
-    conv_2 = norm_2a(conv_2)
+    # conv_2 = norm_2a(conv_2)
     conv_2 = zero_2a(conv_2)
     conv_2 = Dropout(0.5)(conv_2)
 
@@ -109,7 +113,7 @@ def minst_attention(inc_noise=False, attention=True):
 
     conv_3 = conv_2a(apply_attention)
     conv_3 = maxp_2a(conv_3)
-    conv_3 = norm_2a(conv_3)
+    # conv_3 = norm_2a(conv_3)
     conv_3 = zero_2a(conv_3)
 
     dense_3 = dense_1a(conv_3)
@@ -131,7 +135,7 @@ from keras.utils.np_utils import to_categorical
 y_trainCAT = to_categorical(y_train)
 y_testCAT = to_categorical(y_test)
 
-model = minst_attention(inc_noise=False)
+model = minst_attention(inc_noise=True)
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.5, nesterov=True)
 model.compile(loss = 'categorical_crossentropy', optimizer = sgd, metrics=['accuracy'])
 
